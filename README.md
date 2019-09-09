@@ -1,11 +1,10 @@
 # hack-requests
 HackRequests 是基于`Python3.x`的一个给黑客们使用的http底层网络库。如果你需要一个不那么臃肿而且像requests一样优雅的设计，并且提供底层请求包/返回包原文来方便你进行下一步分析，如果你使用Burp Suite，可以将原始报文直接复制重放，对于大量的HTTP请求，hack-requests线程池也能帮你实现最快速的响应。
 
-- [x] 像requests一样好用的设计
-- [x] 提供接口获得底层请求包、返回包原文，方便下一步分析
-- [x] 支持发送HTTP原始报文，支持从Burp Suite等抓包软件中重放
-- [x] hack-requests内部使用连接池、线程池等技术，hack-requests会用最快的方式获取响应数据。使大量I/O密集型操作无需关注这些细节
-- [x] hack-requests是单文件模块，可方便移植到其他项目中。
+- 像requests一样好用的设计
+- 提供接口获得底层请求包、返回包原文，方便下一步分析
+- 支持发送HTTP原始报文，支持从Burp Suite等抓包软件中重放
+- hack-requests是单文件模块，可方便移植到其他项目中。
 
 ## 安装
 - 仅支持python3
@@ -21,7 +20,7 @@ HackRequests 是基于`Python3.x`的一个给黑客们使用的http底层网络�
 import HackRequests
 
 hack = HackRequests.hackRequests()
-url = "http://www.hacking8.com"
+url = "http://x.hacking8.com"
 
 header = '''
 Connection: keep-alive
@@ -52,7 +51,7 @@ print(uu.text())
 import HackRequests
 
 hack = HackRequests.hackRequests()
-url = "http://www.hacking8.com"
+url = "http://x.hacking8.com"
 
 header = '''
 Connection: keep-alive
@@ -74,7 +73,7 @@ print(hh.log.get("response"))
 
 ```bash
 GET / HTTP/1.1
-Host: www.hacking8.com
+Host: x.hacking8.com
 Connection: Keep-Alive
 Cache-Control: max-age=0
 Upgrade-Insecure-Requests: 1
@@ -104,7 +103,7 @@ import HackRequests
 hack = HackRequests.hackRequests()
 raw = '''
 GET / HTTP/1.1
-Host: www.hacking8.com
+Host: x.hacking8.com
 Connection: Keep-Alive
 Cache-Control: max-age=0
 Upgrade-Insecure-Requests: 1
@@ -166,6 +165,7 @@ u = hack.http(url,method="HEAD")
 | cookie      | 自定义Cookie，可传入字典或原始cookie字符串                   | Str/Dict |
 | referer     | 模拟用户Referer                                              | Str      |
 | user_agent  | 用户请求头，若为空则会模拟一个正常的请求头                   | Str      |
+| real_host   | 用于host头注入中在header host字段填写注入语句，这里填写真实地址 如 "127.0.0.1:8000"  具体参考：https://github.com/boy-hack/hack-requests/blob/master/demo/CVE-2016-10033.py | str      |
 
 ### 发送原始响应头
 
@@ -177,7 +177,7 @@ import HackRequests
 hack = HackRequests.hackRequests()
 raw = '''
 GET / HTTP/1.1
-Host: www.hacking8.com
+Host: x.hacking8.com
 Connection: Keep-Alive
 Cache-Control: max-age=0
 Upgrade-Insecure-Requests: 1
@@ -190,14 +190,15 @@ hh = hack.httpraw(raw)
 print(hh.text())
 ```
 
-| 参数名    | 参数类型 | 参数功能                     |
-| --------- | -------- | ---------------------------- |
-| raw(必须) | Str      | 原始报文                     |
-| ssl       | Bool     | 网站是否是https，默认为False |
-| proxy     | Tuple    | 代理地址                     |
-| location  | Bool     | 自动跳转，默认为Ture         |
+| 参数名    | 参数类型 | 参数功能                                                     |
+| --------- | -------- | ------------------------------------------------------------ |
+| raw(必须) | Str      | 原始报文                                                     |
+| ssl       | Bool     | 网站是否是https，默认为False                                 |
+| proxy     | Tuple    | 代理地址                                                     |
+| location  | Bool     | 自动跳转，默认为Ture                                         |
+| real_host | str      | 用于host头注入中在header host字段填写注入语句，这里填写真实地址 如 "127.0.0.1:8000"  具体参考：https://github.com/boy-hack/hack-requests/blob/master/demo/CVE-2016-10033.py |
 
-
+注:httpraw方法最后会解析格式到`http`方法,所以`http`方法使用的参数这里都可以使用
 
 ### response
 
@@ -227,7 +228,8 @@ def _callback(r:HackRequests.response):
     print(r.text())
 
 
-threadpool = HackRequests.threadpool(threadnum=10,callback=_callback)
+threadpool = HackRequests.threadpool(threadnum=10,callback=_callback,timeout=10)
+# 可设置http访问的超时时间，不设置则默认为10s。线程数量[threadnum]设置根据自己电脑配置设置，默认为10,值越大线程越多同一秒访问的网站数量也越多。
 url = "http://www.baidu.com"
 for i in range(50):
     threadpool.http(url)
@@ -243,7 +245,4 @@ threadpool.run()
 | stop()    |                         | 停止线程池                         |
 | run()     |                         | 启动线程池                         |
 
-## Thx
-
-[https://github.com/BugScanTeam/hackhttp](https://github.com/BugScanTeam/hackhttp)
 
